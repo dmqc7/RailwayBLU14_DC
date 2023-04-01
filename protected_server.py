@@ -214,7 +214,7 @@ def predict():
     obs = pd.DataFrame([observation], columns=columns).astype(dtypes)
     proba = pipeline.predict_proba(obs)[0, 0]
     prediction = pipeline.predict(obs)[0]
-    response = {"observation_id" : _id, "prediction": prediction, "probability": proba }
+    response = {"observation_id" : _id, "prediction": bool(prediction), "probability": proba }
     p = Prediction(
         observation_id=_id,
         proba=proba,

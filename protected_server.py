@@ -212,7 +212,7 @@ def predict():
         return jsonify(response)
 
     obs = pd.DataFrame([observation], columns=columns).astype(dtypes)
-    proba = pipeline.predict_proba(obs)[0, 1]
+    proba = pipeline.predict_proba(obs)[0, 0]
     prediction = pipeline.predict(obs)[0]
     response = {'prediction': bool(prediction), 'proba': proba}
     p = Prediction(

@@ -67,6 +67,15 @@ def check_request(request):
         return False, error
     
     return True, ""
+    
+
+def get_valid_categories(df, column):
+
+    categories = list(df[column].unique())
+    # YOUR CODE HERE
+    #raise NotImplementedError()
+
+    return categories
 
 
 
@@ -102,11 +111,11 @@ def check_valid_column(observation):
 def check_categorical_values(observation):
         
     valid_category_map = {
-        "sex": get_valid_categories(df, 'sex'),
-        "race" : get_valid_categories(df, 'race'),
-        "workclass" : get_valid_categories(df, 'workclass'),
-        "education" : get_valid_categories(df, 'education'),
-        "marital-status" : get_valid_categories(df, 'marital-status')
+        "sex": ['Male', 'Female'],
+        "race" : ['White', 'Black', 'Asian-Pac-Islander', 'Amer-Indian-Eskimo', 'Other'],
+        "workclass" : ['State-gov', 'Self-emp-not-inc', 'Private', 'Federal-gov', 'Local-gov', '?', 'Self-emp-inc', 'Without-pay', 'Never-worked'],
+        "education" : ['Bachelors', 'HS-grad', '11th', 'Masters', '9th', 'Some-college', 'Assoc-acdm', 'Assoc-voc', '7th-8th', 'Doctorate', 'Prof-school', '5th-6th', '10th', '1st-4th', 'Preschool', '12th'],
+        "marital-status" : ['Never-married', 'Married-civ-spouse', 'Divorced', 'Married-spouse-absent', 'Separated', 'Married-AF-spouse', 'Widowed']
     }
     
     for key, valid_categories in valid_category_map.items():
@@ -179,8 +188,8 @@ def predict():
         response = {'error': error}
         return jsonify(response)
 
-    _id = obs_dict['id']
-    observation = obs_dict['observation']
+    _id = obs_dict['observation_id']
+    observation = obs_dict['data']
 
     columns_ok, error = check_valid_column(observation)
     if not columns_ok:
@@ -207,14 +216,14 @@ def predict():
     prediction = pipeline.predict(obs)[0]
     response = {'prediction': bool(prediction), 'proba': proba}
     p = Prediction(
-        observation_id=observation_id,
+        observation_id=_id,
         proba=proba,
         observation=request.data,
     )
     try:
         p.save()
     except IntegrityError:
-        error_msg = "ERROR: Observation ID: '{}' already exists".format(observation_id)
+        error_msg = "ERROR: Observation ID: '{}' already exists".format(_id)
         response["error"] = error_msg
         print(error_msg)
         DB.rollback()
@@ -225,12 +234,12 @@ def predict():
 def update():
     obs = request.get_json()
     try:
-        p = Prediction.get(Prediction.observation_id == obs['observation_id'])
+        p = Prediction.get(Prediction.observation_id == obs['_id'])
         p.true_class = obs['true_class']
         p.save()
         return jsonify(model_to_dict(p))
     except Prediction.DoesNotExist:
-        error_msg = 'Observation ID: "{}" does not exist'.format(obs['observation_id'])
+        error_msg = 'Observation ID: "{}" does not exist'.format(obs['_id'])
         return jsonify({'error': error_msg})
 
 

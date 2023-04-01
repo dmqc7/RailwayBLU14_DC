@@ -3,6 +3,7 @@ import json
 import pickle
 import joblib
 import pandas as pd
+from uuid import uuid4
 from flask import Flask, jsonify, request
 from peewee import (
     SqliteDatabase, PostgresqlDatabase, Model, IntegerField,
@@ -206,14 +207,14 @@ def predict():
     prediction = pipeline.predict(obs)[0]
     response = {'prediction': bool(prediction), 'proba': proba}
     p = Prediction(
-        observation_id=_id,
+        observation_id=observation_id,
         proba=proba,
         observation=request.data,
     )
     try:
         p.save()
     except IntegrityError:
-        error_msg = "ERROR: Observation ID: '{}' already exists".format(_id)
+        error_msg = "ERROR: Observation ID: '{}' already exists".format(observation_id)
         response["error"] = error_msg
         print(error_msg)
         DB.rollback()
@@ -224,12 +225,12 @@ def predict():
 def update():
     obs = request.get_json()
     try:
-        p = Prediction.get(Prediction.observation_id == obs['id'])
+        p = Prediction.get(Prediction.observation_id == obs['observation_id'])
         p.true_class = obs['true_class']
         p.save()
         return jsonify(model_to_dict(p))
     except Prediction.DoesNotExist:
-        error_msg = 'Observation ID: "{}" does not exist'.format(obs['id'])
+        error_msg = 'Observation ID: "{}" does not exist'.format(obs['observation_id'])
         return jsonify({'error': error_msg})
 
 
